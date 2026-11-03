@@ -27,7 +27,7 @@ export default function Layout() {
     <div className="app-shell">
       <aside className="sidebar">
         <Link className="brand" to="/">
-          <span>◒</span> SONORA
+          <span>◒</span> MUSICMAN
         </Link>
         <p className="sidebar-caption">TU ESPACIO MUSICAL</p>
         <nav aria-label="Navegación principal">
@@ -46,17 +46,16 @@ export default function Layout() {
           ))}
         </nav>
         <div className="sidebar-note">
-          <strong>Tu música, a tu manera.</strong>
-          <p>Guardá lo que te gusta y descubrí tu historia.</p>
+          <strong>Tu música, tus gustos.</strong>
+          <p>Guardá la musica que te gusta escuchar.</p>
         </div>
         <Link className="sidebar-account" to="/perfil">
-          <b>C</b>
-          <span>Ciro · Cuenta personal</span>
+          <b>A</b>
+          <span>Agustin Aiello · Cuenta personal</span>
         </Link>
       </aside>
       <div className="main-shell">
         <header className="topbar">
-          <span>MY COLLECTION&nbsp; / &nbsp;{label}</span>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -75,7 +74,7 @@ export default function Layout() {
             </label>
           </form>
           <Link className="account-pill" to="/perfil">
-            C&nbsp; Ciro
+            A&nbsp; Agustin Aiello
           </Link>
         </header>
         <main>
