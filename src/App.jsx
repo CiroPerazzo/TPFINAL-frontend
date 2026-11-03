@@ -36,12 +36,12 @@ function Home() {
           </h2>
           <p>Un lugar para tus favoritos, descubrimientos y recuerdos.</p>
           <Link className="button primary" to="/explorar">
-            Explorar música →
+            Explorar música   →
           </Link>
           <Cover
             title="TU COLECCIÓN"
             artist="Una historia personal"
-            color="#927672"
+            color="#927672" 
           />
         </section>
         <section className="summary">
@@ -473,7 +473,7 @@ function Collections() {
   );
 }
 function Profile({ favorites }) {
-  const [name, setName] = useState("Ciro");
+  const [name, setName] = useState("Agustin Aiello");
   const [bio, setBio] = useState(
     "Música para todos los momentos. Siempre buscando algo nuevo.",
   );
