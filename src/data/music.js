@@ -72,3 +72,19 @@ export const collections = [
   { id: "movimiento", title: "En movimiento", count: 4, color: "#9f765f" },
   { id: "siempre", title: "Siempre vuelvo", count: 5, color: "#658b7a" },
 ];
+
+// Datos de demostración; reemplazar por estadísticas reales del backend.
+export const monthlyActivity = [
+  { month: "Enero", days: 8, hours: 22 },
+  { month: "Febrero", days: 12, hours: 35 },
+  { month: "Marzo", days: 10, hours: 26 },
+  { month: "Abril", days: 16, hours: 45 },
+  { month: "Mayo", days: 12, hours: 33.5 },
+  { month: "Junio", days: 20, hours: 56 },
+  { month: "Julio", days: 15, hours: 43 },
+  { month: "Agosto", days: 23, hours: 65 },
+  { month: "Septiembre", days: 17, hours: 47.5 },
+  { month: "Octubre", days: 25, hours: 70 },
+  { month: "Noviembre", days: 18, hours: 50 },
+  { month: "Diciembre", days: 21, hours: 60 },
+];
