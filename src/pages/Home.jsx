@@ -30,18 +30,27 @@ export default function Home() {
             color="#927672" 
           />
         </section>
+        
+        
         <section className="summary">
-          <small>TU RESUMEN</small>
-          <div>
-            <b>12</b>
-            <span>contenidos guardados</span>
-          </div>
-          <div>
-            <b>5</b>
-            <span>favoritos</span>
-          </div>
-          <Link to="/colecciones">3 colecciones　 →</Link>
+        <small>TU RESUMEN</small>
+
+        <div className="summary-stat">
+        <b>12</b>
+        <span>contenidos guardados</span>
+        </div>
+
+        <div className="summary-stat">
+        <b>5</b>
+        <span>favoritos</span>
+        </div>
+
+        <Link className="summary-link" to="/colecciones">
+        3 colecciones　 →
+        </Link>
         </section>
+
+
       </div>
       <section className="home-recent">
         <SectionTitle to="/biblioteca" action="Ver biblioteca →">
