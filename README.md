@@ -1,4 +1,4 @@
-# SONORA · Frontend
+# MUSICMAN · Frontend
 
 Vistas del diseño My Collection implementadas en React con Vite y CSS. Diseño de escritorio fijo de 1440 × 1024 px, sin estilos responsive.
 

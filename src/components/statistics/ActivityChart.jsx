@@ -1,41 +1,68 @@
+
 import { monthlyActivity } from "../../data/music.js";
 
-const formatNumber = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 1 });
+const formatHours = (value) =>
+  `${Number.isInteger(value) ? value : value.toFixed(1)} h`;
 
 export default function ActivityChart() {
-  const totalDays = monthlyActivity.reduce((total, activity) => total + activity.days, 0);
-  const totalHours = monthlyActivity.reduce((total, activity) => total + activity.hours, 0);
+  const totalHours = monthlyActivity.reduce(
+    (total, activity) => total + activity.hours,
+    0
+  );
+
+  const maxHours = 80;
+  const gridValues = [80, 60, 40, 20, 0];
 
   return (
     <section className="monthly-chart">
-      <h2>Actividad por mes</h2>
-      <p>Días de uso y horas acumuladas en tu cuenta.</p>
-      <table className="monthly-activity-table">
-        <caption>Datos de demostración</caption>
-        <thead>
-          <tr>
-            <th scope="col">Mes</th>
-            <th scope="col">Días de uso</th>
-            <th scope="col">Horas de uso</th>
-          </tr>
-        </thead>
-        <tbody>
-          {monthlyActivity.map(({ month, days, hours }) => (
-            <tr key={month}>
-              <th scope="row">{month}</th>
-              <td>{days} días</td>
-              <td>{formatNumber.format(hours)} h</td>
-            </tr>
+      <div className="monthly-chart-header">
+        <div>
+          <h2>Actividad por mes</h2>
+          <p>Tiempo que pasaste escuchando música</p>
+        </div>
+
+        <div className="monthly-total">
+          <span>Total acumulado</span>
+          <strong>{formatHours(totalHours)}</strong>
+        </div>
+      </div>
+
+      <div className="monthly-chart-content">
+        <div className="monthly-y-axis">
+          {gridValues.map((value) => (
+            <span key={value}>{value} h</span>
           ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <th scope="row">Total</th>
-            <td>{totalDays} días</td>
-            <td>{formatNumber.format(totalHours)} h</td>
-          </tr>
-        </tfoot>
-      </table>
+        </div>
+
+        <div className="monthly-chart-area">
+          <div className="monthly-grid-lines">
+            {gridValues.map((value) => (
+              <div
+                className="monthly-grid-line"
+                key={value}
+              />
+            ))}
+          </div>
+
+          <div className="monthly-bars">
+            {monthlyActivity.map(({ month, hours }) => (
+              <div className="monthly-bar-column" key={month}>
+                <div
+                  className="monthly-bar"
+                  style={{
+                    height: `${(hours / maxHours) * 100}%`,
+                  }}
+                  title={`${month}: ${formatHours(hours)}`}
+                />
+
+                <span className="monthly-bar-label">
+                  {month.slice(0, 1)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
