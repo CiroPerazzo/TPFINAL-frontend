@@ -6,11 +6,11 @@ export default function LibraryFilters({ tab, setTab, query, setQuery, sort, set
 <div className="library-tabs">
         <Tabs
           items={[
-            "Todos  12",
+            "Todos",
             "Quiero escuchar",
             "Escuchando",
             "Escuchado",
-            "Favoritos  5",
+            "Favoritos",
           ]}
           value={tab}
           onChange={setTab}

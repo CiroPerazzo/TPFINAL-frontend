@@ -1,6 +1,8 @@
+import useAuth from "../../hooks/useAuth.js";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function Header() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   return (
     <header className="topbar">
@@ -22,7 +24,7 @@ export default function Header() {
             </label>
           </form>
           <Link className="account-pill" to="/perfil">
-            A&nbsp; Agustin Aiello
+            {user?.username}
           </Link>
         </header>
   );

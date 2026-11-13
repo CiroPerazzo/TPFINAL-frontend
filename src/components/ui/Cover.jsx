@@ -1,4 +1,5 @@
-export default function Cover({ title, artist, color, className = "" }) {
+export default function Cover({ title, artist, color, image, className = "" }) {
+  if (image) return <img className={`cover ${className}`} src={image} alt={title} style={{ objectFit: "cover" }} />;
   return (
     <div className={`cover ${className}`} style={{ "--cover-color": color }}>
       <div className="cover-inner">

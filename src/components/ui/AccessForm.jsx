@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Cover from "./Cover.jsx";
+import useAuth from "../../hooks/useAuth.js";
 
 export default function AccessForm({ register = false }) {
   const navigate = useNavigate();
+  const { authenticate, error: sessionError } = useAuth();
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return (
     <div className={`access-page ${register ? "register" : "login"}`}>
@@ -50,16 +53,32 @@ export default function AccessForm({ register = false }) {
             : "Ingresá para volver a tu colección."}
         </p>
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
             const data = new FormData(e.currentTarget);
             if (register && data.get("password") !== data.get("confirm")) {
               setError("Las contraseñas no coinciden.");
               return;
             }
-            setError(
-              "Vista de demostración: la autenticación se conectará al backend.",
-            );
+            setBusy(true);
+            setError("");
+            try {
+              await authenticate(register ? "register" : "login", {
+                email: data.get("email"),
+                password: data.get("password"),
+                ...(register
+                  ? {
+                      username: data.get("name"),
+                      passwordConfirm: data.get("confirm"),
+                    }
+                  : {}),
+              });
+              navigate("/", { replace: true });
+            } catch (error) {
+              setError(error.message);
+            } finally {
+              setBusy(false);
+            }
           }}
         >
           {register && (
@@ -105,21 +124,12 @@ export default function AccessForm({ register = false }) {
               />
             </label>
           )}
-          <button className="button primary" type="submit">
+          <button className="button primary" type="submit" disabled={busy}>
             {register ? "Crear cuenta" : "Iniciar sesión"}
           </button>
-          {error && (
-            <p className="form-message" role="status">
-              {error}{" "}
-              {error.startsWith("Vista") && (
-                <button
-                  type="button"
-                  className="text-button"
-                  onClick={() => navigate("/")}
-                >
-                  Ver colección →
-                </button>
-              )}
+          {(error || sessionError) && (
+            <p className="form-message" role="alert">
+              {error || sessionError}
             </p>
           )}
         </form>
