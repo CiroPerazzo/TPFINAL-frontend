@@ -1,41 +1,54 @@
-# MUSICMAN · Frontend
+# MUSICMAN frontend
 
-Vistas del diseño My Collection implementadas en React con Vite y CSS. Diseño de escritorio fijo de 1440 × 1024 px, sin estilos responsive.
+React y Vite, conectado al backend Express de My Collection. Incluye registro,
+login, recuperación de sesión por cookie HttpOnly, búsqueda en Spotify,
+biblioteca, favoritos, puntuaciones, reseñas, colecciones, perfil y estadísticas.
+Las pantallas consultan la API; no usan los datos de demostración.
 
 ## Desarrollo
 
-Requiere Node.js 20.19+ o 22.12+.
+Requisitos: Node 22.12+ o Node 24, npm y el backend con PostgreSQL configurado.
 
-```sh
+```bash
 npm install
 npm run dev
 ```
 
-```sh
+Iniciar también el backend con `npm run dev` y abrir http://localhost:5173.
+Vite mantiene el puerto 5173 y reenvía `/api` al backend en el puerto 3000.
+Para otro destino, copiar `.env.example` a `.env` y ajustar `API_PROXY_TARGET`.
+`VITE_API_URL` vale `/api` por defecto. Nunca poner secretos de Spotify ni de
+PostgreSQL en variables `VITE_*`, porque quedan expuestas al navegador.
+
+La autenticación utiliza `credentials: include`. Registro envía `username`,
+`email`, `password` y `passwordConfirm`; login usa email y contraseña. Al
+recargar se consulta `/api/auth/me`. Cerrar sesión está disponible en Perfil.
+Los errores del servidor se muestran en las pantallas.
+
+Los enlaces de contenido conservan el ID de Spotify y el tipo (`track`/`album`).
+Las escrituras de favoritos, reseñas, puntuaciones y colecciones usan el ID
+numérico interno devuelto por el backend. El nombre de usuario no es editable:
+el contrato actual permite editar biografía y géneros preferidos.
+
+## Compilación y despliegue
+
+```bash
 npm run build
 npm run preview
 ```
 
-## Vistas
+`preview` también usa el proxy local. En hosting separado, definir
+`VITE_API_URL=https://HOST_BACKEND/api` antes de compilar; configurar el backend
+con `FRONTEND_URL=https://HOST_FRONTEND`, `NODE_ENV=production` y HTTPS.
+Configurar el hosting para servir `index.html` en las rutas de React.
+El proxy local de Vite no se incluye en `dist`.
 
-| Ruta                   | Vista                                                                   |
-| ---------------------- | ----------------------------------------------------------------------- |
-| `/`                    | Inicio                                                                  |
-| `/explorar`            | Exploración y filtros                                                   |
-| `/detalle/after-hours` | Detalle de álbum (también admite los otros IDs de los datos de ejemplo) |
-| `/biblioteca`          | Biblioteca                                                              |
-| `/colecciones`         | Colecciones                                                             |
-| `/perfil`              | Perfil                                                                  |
-| `/estadisticas`        | Estadísticas                                                            |
-| `/login`               | Iniciar sesión                                                          |
-| `/registro`            | Crear cuenta                                                            |
+## Verificación de integración
 
-## Integración con backend
+Desde el backend hermano ejecutar `npm run test:frontend`. Esta prueba carga
+estos servicios y la configuración de Vite, inicia Express y verifica el flujo
+HTTP con PostgreSQL en un esquema temporal. Solo Spotify se reemplaza por una
+respuesta controlada. No sustituye una prueba visual en navegador.
 
-Los datos de presentación están en `src/data/music.js`. Los componentes compartidos están en `src/components/` y las vistas en `src/App.jsx`. La tipografía Inter se sirve localmente desde el paquete instalado.
-
-No se realizan llamadas HTTP ni se almacenan credenciales. Los formularios de acceso validan los campos y muestran un mensaje de demostración. Los favoritos, reseñas, preferencias y colecciones son ejemplos con estado en memoria: se reinician al recargar y algunos al cambiar de vista. Los resúmenes y las estadísticas muestran los valores fijos del Figma. El filtro de canciones queda vacío porque los datos de ejemplo contienen únicamente álbumes.
-
-Al integrar el backend, reemplazar los datos de ejemplo y los manejadores locales por los servicios reales, y compartir el estado de usuario y biblioteca entre vistas. En un hosting estático, configurar las rutas para devolver `index.html` (React Router).
-
-Diseño de referencia: https://www.figma.com/design/G1RyXAZtJXpfVL4aAhOHIk?node-id=0-1
+Para búsquedas reales, el backend necesita credenciales válidas de Spotify.
+Si Spotify rechaza su token, la interfaz muestra el error sin inventar datos.

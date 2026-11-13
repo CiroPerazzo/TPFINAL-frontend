@@ -3,23 +3,37 @@ import { Link } from "react-router-dom";
 import Cover from "../components/ui/Cover.jsx";
 import PageTitle from "../components/ui/PageTitle.jsx";
 import LibraryFilters from "../components/library/LibraryFilters.jsx";
-import FavoriteButton from "../components/library/FavoriteButton.jsx";
 import Stars from "../components/ui/Stars.jsx";
-import { albums } from "../data/music.js";
-
-export default function Library({ favorites, setFavorites }) {
-  const [tab, setTab] = useState("Todos  12");
+import RequestState from "../components/ui/RequestState.jsx";
+import useResource from "../hooks/useResource.js";
+import { libraryService } from "../services/libraryService.js";
+import { detailUrl } from "../services/models.js";
+export default function Library() {
+  const resource = useResource(libraryService.list);
+  const [tab, setTab] = useState("Todos");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("recientes");
-  const results = albums.filter(
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const results = (resource.data || []).filter(
     (a) =>
       `${a.title} ${a.artist}`.toLowerCase().includes(query.toLowerCase()) &&
-      (tab.startsWith("Todos") ||
-        (tab.startsWith("Favoritos")
-          ? favorites.includes(a.id)
-          : a.status === tab)),
+      (tab === "Todos" ||
+        (tab === "Favoritos" ? a.es_favorito : a.status === tab)),
   );
   if (sort === "nombre") results.sort((a, b) => a.title.localeCompare(b.title));
+  async function favorite(a) {
+    setBusy(true);
+    setError("");
+    try {
+      await libraryService.favorite(a.contentId, !a.es_favorito);
+      resource.reload();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <>
       <PageTitle
@@ -30,7 +44,11 @@ export default function Library({ favorites, setFavorites }) {
           ＋ Agregar música
         </Link>
       </PageTitle>
-      <LibraryFilters tab={tab} setTab={setTab} query={query} setQuery={setQuery} sort={sort} setSort={setSort} />
+      <RequestState
+        loading={resource.loading}
+        error={error || resource.error}
+      />
+      <LibraryFilters {...{ tab, setTab, query, setQuery, sort, setSort }} />
       <table className="library-table">
         <thead>
           <tr>
@@ -44,7 +62,7 @@ export default function Library({ favorites, setFavorites }) {
           {results.map((a) => (
             <tr key={a.id}>
               <td>
-                <Link className="library-album" to={`/detalle/${a.id}`}>
+                <Link className="library-album" to={detailUrl(a)}>
                   <Cover {...a} className="mini-cover" />
                   <div>
                     <strong>{a.title}</strong>
@@ -56,16 +74,23 @@ export default function Library({ favorites, setFavorites }) {
                 <span className="pill status">{a.status}</span>
               </td>
               <td>
-                <Stars />
+                <Stars value={a.puntuacion || 0} />
               </td>
               <td>
-                <FavoriteButton album={a} favorites={favorites} setFavorites={setFavorites} />
+                <button
+                  disabled={busy || resource.loading}
+                  className="favorite-button"
+                  aria-label={`${a.es_favorito ? "Quitar" : "Agregar"} favorito`}
+                  onClick={() => favorite(a)}
+                >
+                  {a.es_favorito ? "♥" : "♡"}
+                </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {!results.length && (
+      {!resource.loading && !resource.error && !results.length && (
         <p className="empty">No encontramos música con esos filtros.</p>
       )}
     </>

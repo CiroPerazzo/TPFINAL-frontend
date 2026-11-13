@@ -1,11 +1,21 @@
 import { Link } from "react-router-dom";
-import Cover from "../components/ui/Cover.jsx";
 import AlbumGrid from "../components/music/AlbumGrid.jsx";
-import SectionTitle from "../components/ui/SectionTitle.jsx";
 import PageTitle from "../components/ui/PageTitle.jsx";
-import { albums } from "../data/music.js";
-
+import SectionTitle from "../components/ui/SectionTitle.jsx";
+import RequestState from "../components/ui/RequestState.jsx";
+import useResource from "../hooks/useResource.js";
+import { libraryService } from "../services/libraryService.js";
+import { statisticsService } from "../services/statisticsService.js";
+const load = async () => {
+  const [items, stats, activity] = await Promise.all([
+    libraryService.list(),
+    statisticsService.get(),
+    statisticsService.activity(),
+  ]);
+  return { items, stats, activity };
+};
 export default function Home() {
+  const { data, loading, error } = useResource(load);
   return (
     <>
       <PageTitle
@@ -22,52 +32,45 @@ export default function Home() {
           </h2>
           <p>Un lugar para tus favoritos, descubrimientos y recuerdos.</p>
           <Link className="button primary" to="/explorar">
-            Explorar música   →
+            Explorar música →
           </Link>
-          <Cover
-            title="TU COLECCIÓN"
-            artist="Una historia personal"
-            color="#927672" 
-          />
         </section>
-        
-        
-        <section className="summary">
-        <small>TU RESUMEN</small>
-
-        <div className="summary-stat">
-        <b>12</b>
-        <span>contenidos guardados</span>
-        </div>
-
-        <div className="summary-stat">
-        <b>5</b>
-        <span>favoritos</span>
-        </div>
-
-        <Link className="summary-link" to="/colecciones">
-        3 colecciones　 →
-        </Link>
-        </section>
-
-
+        {data && (
+          <section className="summary">
+            <small>TU RESUMEN</small>
+            <div className="summary-stat">
+              <b>{data.items.length}</b>
+              <span>contenidos guardados</span>
+            </div>
+            <div className="summary-stat">
+              <b>{data.stats.favoritos}</b>
+              <span>favoritos</span>
+            </div>
+            <Link to="/colecciones">
+              {data.stats.colecciones.length} colecciones →
+            </Link>
+          </section>
+        )}
       </div>
-      <section className="home-recent">
-        <SectionTitle to="/biblioteca" action="Ver biblioteca →">
-          Agregados recientemente
-        </SectionTitle>
-        <AlbumGrid albums={albums} />
-      </section>
-      <section className="home-activity">
-        <SectionTitle to="/perfil">Tu actividad reciente</SectionTitle>
-        <div className="activity-card">
-          <span>♥</span>
-          <div>
-            <strong>Agregaste After Hours a tus favoritos</strong>
-            <p>Hoy · Biblioteca</p>
-          </div>
-        </div>
-      </section>
+      <RequestState {...{ loading, error }} />
+      {data && (
+        <>
+          <SectionTitle to="/biblioteca" action="Ver biblioteca →">
+            Agregados recientemente
+          </SectionTitle>
+          <AlbumGrid albums={data.items.slice(0, 8)} />
+          {!data.items.length && (
+            <p>Tu biblioteca está vacía. Explorá música para empezar.</p>
+          )}
+          <SectionTitle>Tu actividad reciente</SectionTitle>
+          {data.activity.slice(0, 5).map((a) => (
+            <div className="activity-card" key={a.id}>
+              <span>{a.tipo.replaceAll("_", " ")}</span>
+              <time>{new Date(a.creado_en).toLocaleString("es-AR")}</time>
+            </div>
+          ))}
+        </>
+      )}
     </>
   );
 }

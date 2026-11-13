@@ -1,64 +1,83 @@
-import StatCard from "../components/statistics/StatCard.jsx";
-import ActivityChart from "../components/statistics/ActivityChart.jsx";
 import PageTitle from "../components/ui/PageTitle.jsx";
-
+import StatCard from "../components/statistics/StatCard.jsx";
+import RequestState from "../components/ui/RequestState.jsx";
+import useResource from "../hooks/useResource.js";
+import { statisticsService } from "../services/statisticsService.js";
+import { states } from "../services/models.js";
 export default function Statistics() {
-  const colors = ["#a9e4b7", "#b8a8ef", "#f4b986", "#88afc2"];
+  const { data, loading, error } = useResource(statisticsService.get);
+  const total = data?.totales_por_tipo.reduce((n, x) => n + x.total, 0) || 0;
   return (
     <>
       <PageTitle
-        title="Tu año en música"
-        subtitle="Una mirada a lo que guardaste, valoraste y descubriste."
-      >
-        <select aria-label="Año">
-          <option>2026</option>
-        </select>
-      </PageTitle>
-      <div className="stat-grid">
-        {[
-          ["EN TU BIBLIOTECA", "12"],
-          ["FAVORITOS", "5"],
-          ["ESCUCHADOS", "7"],
-          ["PUNTUACIÓN PROMEDIO", "4,2"],
-        ].map(([label, value]) => (
-          <StatCard key={label} label={label} value={value} />
-        ))}
-      </div>
-      <div className="chart-grid">
-        <section className="chart-card">
-          <h2>Estados de tu biblioteca</h2>
-          <div className="horizontal-bars">
+        title="Tu música en números"
+        subtitle="Estadísticas de tu biblioteca y actividad de los últimos seis meses."
+      />
+      <RequestState {...{ loading, error }} />
+      {data && (
+        <>
+          <div className="stat-grid">
             {[
-              ["Escuchado", 7, 238],
-              ["Escuchando", 3, 102],
-              ["Quiero escuchar", 2, 68],
-            ].map(([label, value, width], i) => (
-              <div className="bar-row" key={label}>
-                <span>{label}</span>
-                <div className="bar-track">
-                  <div style={{ width: `${(width / 280) * 100}%`, background: colors[i] }} />
-                </div>
-                <b>{value}</b>
-              </div>
+              ["EN TU BIBLIOTECA", total],
+              ["FAVORITOS", data.favoritos],
+              [
+                "ESCUCHADOS",
+                data.distribucion_estados.find((s) => s.estado === "escuchado")
+                  ?.total || 0,
+              ],
+              [
+                "PUNTUACIÓN PROMEDIO",
+                data.promedio_puntuaciones.promedio ?? "—",
+              ],
+              ["RESEÑAS", data.total_resenas],
+              ["COLECCIONES", data.colecciones.length],
+            ].map(([label, value]) => (
+              <StatCard key={label} {...{ label, value }} />
             ))}
           </div>
-        </section>
-        <section className="chart-card">
-          <h2>Géneros de tu biblioteca</h2>
-          <div className="horizontal-bars genre-bars">
-            {["Pop", "R&B", "Urbano", "Electrónica"].map((label, i) => (
-              <div className="bar-row" key={label}>
-                <span>{label}</span>
-                <div
-                  style={{ width: `${50 - i * 10}%`, background: colors[i] }}
-                  className="genre-bar"
-                />
-              </div>
+          <div className="chart-grid">
+            {[
+              [
+                "Estados de tu biblioteca",
+                data.distribucion_estados.map((s) => [
+                  states[s.estado],
+                  s.total,
+                ]),
+              ],
+              [
+                "Géneros de tu biblioteca",
+                data.generos_frecuentes.map((g) => [g.genero, g.total]),
+              ],
+              [
+                "Actividad por mes",
+                data.actividad_por_mes.map((m) => [m.mes, m.acciones]),
+              ],
+            ].map(([title, rows]) => (
+              <section className="chart-card" key={title}>
+                <h2>{title}</h2>
+                {rows.length ? (
+                  rows.map(([label, value]) => (
+                    <div className="bar-row" key={label}>
+                      <span>{label}</span>
+                      <div className="bar-track">
+                        <div
+                          style={{
+                            width: `${(value / Math.max(...rows.map((r) => r[1]), 1)) * 100}%`,
+                            background: "#b8a8ef",
+                          }}
+                        />
+                      </div>
+                      <b>{value}</b>
+                    </div>
+                  ))
+                ) : (
+                  <p>Todavía no hay datos.</p>
+                )}
+              </section>
             ))}
           </div>
-        </section>
-      </div>
-      <ActivityChart />
+        </>
+      )}
     </>
   );
 }

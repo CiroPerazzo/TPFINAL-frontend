@@ -1,3 +1,4 @@
+import useAuth from "../../hooks/useAuth.js";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
 const navigation = [
@@ -10,6 +11,7 @@ const navigation = [
 ];
 
 export default function Sidebar() {
+  const { user } = useAuth();
   const { pathname } = useLocation();
   return (
     <aside className="sidebar">
@@ -33,8 +35,8 @@ export default function Sidebar() {
           ))}
         </nav>
         <Link className="sidebar-account" to="/perfil">
-          <b>A</b>
-          <span>Agustin Aiello · Cuenta personal</span>
+          <b>{user?.username?.[0]?.toUpperCase()}</b>
+          <span>{user?.username} · Cuenta personal</span>
         </Link>
       </aside>
   );
