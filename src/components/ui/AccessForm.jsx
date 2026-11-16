@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Cover from "./Cover.jsx";
 import useAuth from "../../hooks/useAuth.js";
 
 export default function AccessForm({ register = false }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { authenticate, error: sessionError } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -73,7 +74,8 @@ export default function AccessForm({ register = false }) {
                     }
                   : {}),
               });
-              navigate("/", { replace: true });
+              const destination = location.state?.from ?? "/";
+              navigate(destination, { replace: true });
             } catch (error) {
               setError(error.message);
             } finally {

@@ -6,7 +6,7 @@ import Tabs from "../components/ui/Tabs.jsx";
 import RequestState from "../components/ui/RequestState.jsx";
 import { musicService } from "../services/musicService.js";
 export default function Explore() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState(params.get("q") || "");
   const [tab, setTab] = useState("Todos");
   const [sort, setSort] = useState("relevancia");
@@ -55,7 +55,18 @@ export default function Explore() {
           aria-label="Buscar música"
           placeholder="Buscar artistas, canciones o álbumes"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            setParams((prev) => {
+              const next = new URLSearchParams(prev);
+              if (val) {
+                next.set("q", val);
+              } else {
+                next.delete("q");
+              }
+              return next;
+            }, { replace: true });
+          }}
         />
       </label>
       <div className="explore-controls">
