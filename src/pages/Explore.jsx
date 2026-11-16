@@ -11,7 +11,7 @@ export default function Explore() {
   const [tab, setTab] = useState("Todos");
   const [sort, setSort] = useState("relevancia");
   const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   useEffect(() => {
     setQuery(params.get("q") || "");
@@ -20,11 +20,11 @@ export default function Explore() {
     const controller = new AbortController();
     setError("");
     setResults([]);
-    setLoading(Boolean(query.trim()));
+    setLoading(true);
     const timer = setTimeout(async () => {
       try {
         const items = await musicService.search(
-          query,
+          query.trim() || "pop",
           tab === "Canciones" ? "track" : tab === "álbumes" ? "album" : "both",
           controller.signal,
         );
@@ -74,7 +74,10 @@ export default function Explore() {
         </select>
       </div>
       <RequestState {...{ loading, error }} />
-      <AlbumGrid albums={sorted} />
+      {!query.trim() && !loading && !error && results.length > 0 && (
+        <p>Descubrí canciones y álbumes de pop o buscá tu música favorita.</p>
+      )}
+      {!loading && !error && results.length > 0 && <AlbumGrid albums={sorted} />}
       {!loading && !error && !results.length && (
         <p className="empty">
           {query.trim()
