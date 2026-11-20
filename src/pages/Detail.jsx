@@ -15,37 +15,60 @@ export default function Detail() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const tipo = params.get("tipo") === "track" ? "track" : "album";
-  const loader = useCallback(async () => {
-    const [items, collections] = await Promise.all([
+
+  // Carga principal: si falla esto no hay nada que mostrar.
+  const mainLoader = useCallback(async () => {
+    const [detail, libraryItems] = await Promise.all([
+      musicService.detail(id, tipo),
       libraryService.list(),
-      collectionService.list(),
     ]);
-    const item = items.find((i) => i.spotify_id === id && i.tipo === tipo);
-    const album = item || (await musicService.detail(id, tipo));
-    const { review } = await reviewService.get(album.contentId);
-    return { album, item, review, collections };
+    const item = libraryItems.find(
+      (i) => i.spotify_id === id && i.tipo === tipo,
+    );
+    const album = item ?? detail;
+    return { album, item };
   }, [id, tipo]);
-  const resource = useResource(loader);
+  const main = useResource(mainLoader);
+
+  // Cargas secundarias independientes: su error se muestra en cada sección.
+  const contentId = main.data?.album.contentId;
+  const reviewLoader = useCallback(
+    () =>
+      contentId
+        ? reviewService.get(contentId)
+        : Promise.resolve({ review: null }),
+    [contentId],
+  );
+  const reviewResource = useResource(reviewLoader);
+
+  const collectionsResource = useResource(collectionService.list);
+
   const [modal, setModal] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
   async function run(action) {
     setBusy(true);
     setError("");
     try {
       await action();
       setModal("");
-      resource.reload();
+      main.reload();
+      reviewResource.reload();
     } catch (e) {
       setError(e.message);
     } finally {
       setBusy(false);
     }
   }
-  if (resource.loading || resource.error || !resource.data)
-    return <RequestState loading={resource.loading} error={resource.error} />;
-  const { album, item, review, collections } = resource.data;
-  const contentId = album.contentId;
+
+  if (main.loading || main.error || !main.data)
+    return <RequestState loading={main.loading} error={main.error} />;
+
+  const { album, item } = main.data;
+  const review = reviewResource.data?.review;
+  const collections = collectionsResource.data ?? [];
+
   return (
     <div className="detail-page">
       <Link className="back-link" to="/explorar">
@@ -143,22 +166,30 @@ export default function Detail() {
           </div>
         </fieldset>
         <div className="review-row">
-          <p>{review?.texto || "Todavía no escribiste una reseña."}</p>
-          <button
-            className="pill"
-            disabled={busy}
-            onClick={() => setModal("review")}
-          >
-            {review ? "Editar" : "Escribir"} reseña
-          </button>
-          {review && (
-            <button
-              className="pill"
-              disabled={busy}
-              onClick={() => run(() => reviewService.remove(contentId))}
-            >
-              Eliminar reseña
-            </button>
+          <RequestState
+            loading={reviewResource.loading}
+            error={reviewResource.error}
+          />
+          {!reviewResource.loading && !reviewResource.error && (
+            <>
+              <p>{review?.texto || "Todavía no escribiste una reseña."}</p>
+              <button
+                className="pill"
+                disabled={busy}
+                onClick={() => setModal("review")}
+              >
+                {review ? "Editar" : "Escribir"} reseña
+              </button>
+              {review && (
+                <button
+                  className="pill"
+                  disabled={busy}
+                  onClick={() => run(() => reviewService.remove(contentId))}
+                >
+                  Eliminar reseña
+                </button>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -191,6 +222,10 @@ export default function Detail() {
             </form>
           ) : (
             <div className="collection-options">
+              <RequestState
+                loading={collectionsResource.loading}
+                error={collectionsResource.error}
+              />
               {collections.map((c) => (
                 <button
                   className="pill"
@@ -203,9 +238,11 @@ export default function Detail() {
                   {c.nombre} ＋
                 </button>
               ))}
-              {!collections.length && (
-                <Link to="/colecciones">Creá tu primera colección</Link>
-              )}
+              {!collectionsResource.loading &&
+                !collectionsResource.error &&
+                !collections.length && (
+                  <Link to="/colecciones">Creá tu primera colección</Link>
+                )}
             </div>
           )}
         </Modal>
