@@ -1378,17 +1378,27 @@ main {
 .empty-collection {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 220px;
+  padding: 40px 16px;
+  text-align: center;
 }
 
 .empty-collection .button {
+  justify-content: center;
+  height: 52px;
+  min-width: 220px;
+  padding: 0 40px;
+  font-size: 16px;
   white-space: normal;
-  height: auto;
-  min-height: 42px;
-  padding-block: 12px;
 }
-
+.empty-collection p {
+  max-width: 22rem;
+  font-size: 15px;
+  color: var(--muted);
+}
 .monthly-activity-table {
   width: 100%;
   margin-top: 24px;

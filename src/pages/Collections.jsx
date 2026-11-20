@@ -130,9 +130,14 @@ export default function Collections() {
               </button>
             </div>
           ))}
-          {!selected.items.length && (
-            <p>Tu colección está vacía. Agregá música desde su detalle.</p>
-          )}
+            {!selected.items.length && (
+             <div className="empty-collection">
+             <p>Todavía no agregaste música a esta colección.</p>
+              <Link className="button primary" to="/explorar">
+              Agrega música
+              </Link>
+            </div>
+            )}
           <button
             className="pill"
             disabled={busy}
