@@ -387,31 +387,37 @@ main {
   align-self: flex-start;
 }
 
-.home-recent {
+.home-recent,
+.home-activity {
   margin-top: 35px;
 }
-.home-activity {
-  margin-top: 42px;
-}
-.activity-card {
-  height: 105px;
+.home-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 16px;
   border-radius: 14px;
   background: var(--panel);
+}
+.home-activity-list li {
   display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 24px 23px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  padding: 14px 0;
 }
-.activity-card > span {
-  font-size: 24px;
-  color: var(--accent);
+.home-activity-list li + li {
+  border-top: 1px solid var(--pill);
 }
-.activity-card strong {
-  font-size: 15px;
+.home-activity-list strong {
+  font-size: 13px;
 }
-.activity-card p {
+.home-activity-list strong::first-letter {
+  text-transform: uppercase;
+}
+.home-activity-list time {
   font-size: 12px;
-  margin-top: 12px;
+  color: var(--muted);
 }
 .search-field {
   background: var(--panel);
@@ -829,13 +835,13 @@ main {
   margin-top: 11px;
 }
 .profile-hero {
-  height: 276px;
   background: #354c42;
   border-radius: 18px;
   margin-top: 11px;
   display: flex;
-  position: relative;
-  padding: 45px 32px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 32px;
   gap: 34px;
 }
 .avatar {
@@ -844,6 +850,7 @@ main {
   font-size: 57px;
   font-weight: 700;
   width: 142px;
+  flex-shrink: 0;
   height: 142px;
   border-radius: 50%;
   display: flex;
@@ -862,27 +869,35 @@ main {
 }
 .profile-info > span {
   display: block;
-  margin-top: 56px;
+  margin-top: 8px;
   font-size: 14px;
+  overflow-wrap: anywhere;
 }
-.profile-hero > .pill {
-  position: absolute;
-  right: 48px;
-  top: 42px;
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+  align-self: flex-start;
+}
+.profile-actions .pill {
   background: var(--bg);
-  width: 155px;
 }
-.profile-genres {
-  margin-top: 43px;
+.profile-genres,
+.profile-favorites {
+  margin-top: 35px;
 }
 .profile-genres .tabs {
   gap: 15px;
+  flex-wrap: wrap;
 }
-.profile-genres .pill {
-  width: 135px;
-}
-.profile-favorites {
-  margin-top: 39px;
+.profile-empty {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 13px;
 }
 .profile-activity {
   margin-top: 34px;
@@ -1310,9 +1325,6 @@ main {
   .library-table th, .library-table td { padding-inline: 1%; }
   .library-table td:last-child { padding-left: 1%; }
   .status { width: auto; white-space: normal; }
-  .profile-hero { height: auto; min-height: 276px; flex-wrap: wrap; }
-  .profile-info > span { margin-top: 24px; }
-  .profile-hero > .pill { position: static; }
   .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 

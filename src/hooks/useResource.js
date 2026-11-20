@@ -23,5 +23,5 @@ export default function useResource(loader) {
       active = false;
     };
   }, [loader, version]);
-  return { data, error, loading, reload };
+  return { data, setData, error, loading, reload };
 }
