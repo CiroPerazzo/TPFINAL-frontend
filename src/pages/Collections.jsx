@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PageTitle from "../components/ui/PageTitle.jsx";
 import Modal from "../components/ui/Modal.jsx";
@@ -9,6 +9,8 @@ import { detailUrl } from "../services/models.js";
 export default function Collections() {
   const resource = useResource(service.list);
   const [modal, setModal] = useState(false);
+  const modalOpener = useRef(null);
+  const detailOpener = useRef(null);
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +31,13 @@ export default function Collections() {
         title="Tus colecciones"
         subtitle="Creá espacios para cada momento y cada sonido."
       >
-        <button className="button primary" onClick={() => setModal(true)}>
+        <button
+          className="button primary"
+          onClick={(e) => {
+            modalOpener.current = e.currentTarget;
+            setModal(true);
+          }}
+        >
           ＋ Nueva colección
         </button>
       </PageTitle>
@@ -43,9 +51,10 @@ export default function Collections() {
             className="collection-card"
             key={c.id}
             disabled={busy}
-            onClick={() =>
-              run(async () => setSelected(await service.detail(c.id)))
-            }
+            onClick={(e) => {
+              detailOpener.current = e.currentTarget;
+              run(async () => setSelected(await service.detail(c.id)));
+            }}
           >
             <h2>{c.nombre}</h2>
             <p>{c.descripcion}</p>
@@ -56,7 +65,11 @@ export default function Collections() {
         <p>Todavía no creaste colecciones.</p>
       )}
       {modal && (
-        <Modal title="Nueva colección" onClose={() => setModal(false)}>
+        <Modal
+          openerRef={modalOpener}
+          title="Nueva colección"
+          onClose={() => setModal(false)}
+        >
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -81,6 +94,7 @@ export default function Collections() {
       )}
       {selected && (
         <Modal
+          openerRef={detailOpener}
           title={selected.collection.nombre}
           onClose={() => setSelected(null)}
         >

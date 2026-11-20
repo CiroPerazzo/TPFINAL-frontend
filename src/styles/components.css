@@ -167,7 +167,7 @@ main {
 .button {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 8px;
   padding: 0 18px;
   border-radius: 21px;
@@ -183,7 +183,7 @@ main {
 .pill {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   min-height: 34px;
   padding: 0 14px;
   background: var(--pill);
@@ -430,6 +430,14 @@ main {
   outline: none;
   font-size: 15px;
 }
+.loading-centered {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
 .explore-search {
   margin-top: 32px;
 }
@@ -663,15 +671,13 @@ main {
   gap: 11px;
   margin-top: 22px;
 }
-.detail-actions > .button {
-  min-width: 235px;
-  margin-right: 4px;
-}
-.detail-actions > .pill:nth-child(2) {
-  width: 118px;
-}
-.detail-actions > .pill:nth-child(3) {
-  width: 135px;
+.detail-actions > button,
+.detail-review-actions > button,
+.experience-setup > button {
+  min-height: 44px;
+  padding: 8px 18px;
+  line-height: 1.25;
+  text-align: center;
 }
 .about-album {
   margin-top: 52px;
@@ -691,44 +697,92 @@ main {
 .experience-card {
   margin-top: 18px;
   background: var(--panel);
-  height: 220px;
+  border: 1px solid var(--pill);
   border-radius: 16px;
   padding: 24px 23px;
 }
 .experience-controls {
   display: flex;
-  gap: 46px;
+  flex-wrap: wrap;
+  gap: 24px 48px;
   align-items: flex-start;
-  margin-bottom: 31px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 .experience-controls label,
 .experience-controls > div {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  font-size: 12px;
+  gap: 10px;
+  font-size: 16px;
   color: var(--muted);
   font-weight: 700;
 }
 .experience-controls select {
-  width: 150px;
+  width: min(100%, 220px);
+  min-height: 48px;
+  font-size: 16px;
   font-weight: 500;
 }
-.experience-controls .stars {
-  font-size: 26px;
-  line-height: 34px;
+.experience-controls label {
+  width: min(100%, 220px);
 }
-.experience-card > strong {
-  font-size: 13px;
+.experience-controls .stars {
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 30px;
+  line-height: 1;
+}
+.experience-controls .stars button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--pill);
+}
+.experience-controls .stars button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.experience-controls .pill {
+  min-height: 44px;
+  align-self: flex-start;
+}
+.experience-setup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.detail-review {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--pill);
+}
+.detail-review h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.detail-review p {
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.detail-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
 }
 .review-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 8px;
-}
-.review-row p {
-  font-size: 14px;
 }
 .review-row button {
   width: 170px;
@@ -1177,16 +1231,13 @@ main {
   font-size: 13px;
   line-height: 20px;
 }
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.modal::backdrop {
   background: rgb(0 0 0 / 65%);
 }
 .modal {
+  margin: auto;
+  border: 0;
+  color: inherit;
   width: 90%;
   max-height: 80vh;
   overflow: auto;
@@ -1288,8 +1339,7 @@ main {
   .library-table .stars { font-size: 14px; }
   .album-detail { flex-direction: column; }
   .album-detail > .cover { width: 60%; }
-  .experience-card { height: auto; }
-  .experience-controls { gap: 8%; flex-wrap: wrap; }
+  .experience-controls { gap: 20px; }
   .profile-hero { padding: 24px 6%; }
   .monthly-chart { height: auto; }
   .access-page { grid-template-columns: 100%; }
