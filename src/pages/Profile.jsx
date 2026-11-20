@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import AlbumGrid from "../components/music/AlbumGrid.jsx";
 import SectionTitle from "../components/ui/SectionTitle.jsx";
 import Modal from "../components/ui/Modal.jsx";
@@ -10,7 +10,9 @@ import { libraryService } from "../services/libraryService.js";
 export default function Profile() {
   const { user, setUser, logout } = useAuth();
   const resource = useResource(libraryService.list);
+  const favorites = (resource.data || []).filter((album) => album.es_favorito);
   const [modal, setModal] = useState(false);
+  const modalOpener = useRef(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   async function run(action) {
@@ -34,7 +36,13 @@ export default function Profile() {
           <p>{user.bio}</p>
           <span>{user.email}</span>
         </div>
-        <button className="pill" onClick={() => setModal(true)}>
+        <button
+          className="pill"
+          onClick={(e) => {
+            modalOpener.current = e.currentTarget;
+            setModal(true);
+          }}
+        >
           Editar perfil
         </button>
         <button className="pill" disabled={busy} onClick={() => run(logout)}>
@@ -54,9 +62,19 @@ export default function Profile() {
         ))}
       </div>
       <SectionTitle to="/biblioteca">Mis favoritos</SectionTitle>
-      <AlbumGrid albums={(resource.data || []).filter((a) => a.es_favorito)} />
+      {!resource.loading && !resource.error && resource.data && (
+        favorites.length ? (
+          <AlbumGrid albums={favorites} />
+        ) : (
+          <p className="empty">Todavía no tenés favoritos.</p>
+        )
+      )}
       {modal && (
-        <Modal title="Editar perfil" onClose={() => setModal(false)}>
+        <Modal
+          openerRef={modalOpener}
+          title="Editar perfil"
+          onClose={() => setModal(false)}
+        >
           <form
             onSubmit={(e) => {
               e.preventDefault();

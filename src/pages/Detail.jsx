@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import Cover from "../components/ui/Cover.jsx";
 import Stars from "../components/ui/Stars.jsx";
@@ -44,6 +44,7 @@ export default function Detail() {
   const collectionsResource = useResource(collectionService.list);
 
   const [modal, setModal] = useState("");
+  const modalOpener = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -61,6 +62,11 @@ export default function Detail() {
       setBusy(false);
     }
   }
+  if (resource.loading || resource.error || !resource.data)
+    return <RequestState loading={resource.loading} error={resource.error} />;
+  const { album, item, review, collections } = resource.data;
+  const contentId = album.contentId;
+  const saveToLibrary = () => run(() => libraryService.add(album));
 
   if (main.loading || main.error || !main.data)
     return <RequestState loading={main.loading} error={main.error} />;
@@ -91,15 +97,13 @@ export default function Detail() {
             <button
               className="button primary"
               disabled={busy}
-              onClick={() =>
-                run(() =>
-                  item
-                    ? libraryService.remove(contentId)
-                    : libraryService.add(album),
-                )
+              onClick={
+                item
+                  ? () => run(() => libraryService.remove(contentId))
+                  : saveToLibrary
               }
             >
-              {item ? "Quitar de biblioteca" : "＋ Guardar en biblioteca"}
+              {item ? "Quitar de biblioteca" : "Guardar en biblioteca"}
             </button>
             <button
               className="pill"
@@ -108,28 +112,44 @@ export default function Detail() {
                 run(() => libraryService.favorite(contentId, !item.es_favorito))
               }
             >
-              {item?.es_favorito ? "♥" : "♡"} Favorito
+              {item?.es_favorito ? "Quitar favorito" : "Marcar favorito"}
             </button>
             <button
               className="pill"
               disabled={busy}
-              onClick={() => setModal("collection")}
+              onClick={(e) => {
+                modalOpener.current = e.currentTarget;
+                setModal("collection");
+              }}
             >
-              ＋ Colección
+              Agregar a colección
             </button>
           </div>
         </div>
       </div>
       <section className="experience">
         <h2>Tu experiencia</h2>
-        {!item && (
-          <p>
-            Guardá este contenido en tu biblioteca para cambiar su estado y
-            puntuación.
-          </p>
-        )}
-        <fieldset className="experience-card" disabled={busy || !item}>
-          <div className="experience-controls">
+        <div className="experience-card">
+          {!item && (
+            <div className="experience-setup">
+              <p>
+                Guardá este contenido en tu biblioteca para cambiar su estado y
+                puntuarlo.
+              </p>
+              <button
+                className="button primary"
+                disabled={busy}
+                onClick={saveToLibrary}
+              >
+                Guardar en biblioteca
+              </button>
+            </div>
+          )}
+          <fieldset
+            className="experience-controls"
+            aria-label="Estado y puntuación"
+            disabled={busy || !item}
+          >
             <label>
               Estado
               <select
@@ -146,7 +166,9 @@ export default function Detail() {
               </select>
             </label>
             <div>
-              <span>Tu puntuación</span>
+              <span>
+                Tu puntuación{item?.puntuacion ? ` · ${item.puntuacion}/5` : ""}
+              </span>
               <Stars
                 value={item?.puntuacion || 0}
                 onChange={(value) => {
@@ -163,6 +185,18 @@ export default function Detail() {
                 </button>
               )}
             </div>
+          </fieldset>
+          <section className="detail-review">
+            <h3>Tu reseña</h3>
+            <p>{review?.texto || "Todavía no escribiste una reseña."}</p>
+            <div className="detail-review-actions">
+              <button
+                className="pill"
+                disabled={busy}
+                onClick={(e) => {
+                  modalOpener.current = e.currentTarget;
+                  setModal("review");
+                }}
           </div>
         </fieldset>
         <div className="review-row">
@@ -189,12 +223,15 @@ export default function Detail() {
                   Eliminar reseña
                 </button>
               )}
+            </div>
+          </section>
             </>
           )}
         </div>
       </section>
       {modal && (
         <Modal
+          openerRef={modalOpener}
           title={modal === "review" ? "Tu reseña" : "Agregar a una colección"}
           onClose={() => setModal("")}
         >
