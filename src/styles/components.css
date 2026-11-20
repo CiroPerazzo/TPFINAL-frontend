@@ -1427,3 +1427,7 @@ main {
   color: var(--mint);
   font-weight: 700;
 }
+
+.genre-card .bar-row > span {
+  text-transform: capitalize;
+}
