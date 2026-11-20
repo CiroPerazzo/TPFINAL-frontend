@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import Cover from "../components/ui/Cover.jsx";
 import Stars from "../components/ui/Stars.jsx";
@@ -26,7 +26,7 @@ export default function Detail() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function run(action, reload = main.reload) {
+  async function run(action) {
     setBusy(true);
     setError("");
     try {
@@ -43,12 +43,13 @@ export default function Detail() {
     return <RequestState loading={resource.loading} error={resource.error} />;
   const { album, item, review } = resource.data;
   const contentId = album.contentId;
+  const saveToLibrary = () => run(() => libraryService.add(album));
   return (
     <div className="detail-page">
       <Link className="back-link" to="/explorar">
         ← Volver a explorar
       </Link>
-      <RequestState error={error || main.error} />
+      <RequestState error={error} />
       <div className="album-detail">
         <Cover {...album} />
         <div className="album-info">
@@ -64,7 +65,7 @@ export default function Detail() {
           <div className="detail-actions">
             <button
               className="button primary"
-              disabled={libraryBusy}
+              disabled={busy}
               onClick={
                 item
                   ? () => run(() => libraryService.remove(contentId))
@@ -75,7 +76,7 @@ export default function Detail() {
             </button>
             <button
               className="pill"
-              disabled={libraryBusy || !item}
+              disabled={busy || !item}
               onClick={() =>
                 run(() => libraryService.favorite(contentId, !item.es_favorito))
               }
@@ -99,7 +100,7 @@ export default function Detail() {
               </p>
               <button
                 className="button primary"
-                disabled={libraryBusy}
+                disabled={busy}
                 onClick={saveToLibrary}
               >
                 Guardar en biblioteca
@@ -109,7 +110,7 @@ export default function Detail() {
           <fieldset
             className="experience-controls"
             aria-label="Estado y puntuación"
-            disabled={busy || main.loading || !item}
+            disabled={busy || !item}
           >
             <label>
               Estado
@@ -117,9 +118,7 @@ export default function Detail() {
                 value={item?.estado || "quiero_escuchar"}
                 onChange={(e) => {
                   const value = e.target.value;
-                  updateExperience("estado", value, () =>
-                    libraryService.state(contentId, value),
-                  );
+                  run(() => libraryService.state(contentId, value));
                 }}
               >
                 {Object.entries(states).map(([value, label]) => (
@@ -136,26 +135,22 @@ export default function Detail() {
               <Stars
                 value={item?.puntuacion || 0}
                 onChange={(value) => {
-                  updateExperience("puntuacion", value, () =>
-                    ratingService.set(contentId, value),
-                  );
+                  run(() => ratingService.set(contentId, value));
                 }}
               />
               {item?.puntuacion && (
                 <button
                   className="pill"
                   onClick={() =>
-                    updateExperience("puntuacion", null, () =>
-                      ratingService.clear(contentId),
-                    )
+                    run(() => ratingService.clear(contentId))
                   }
                 >
                   Quitar puntuación
                 </button>
               )}
             </div>
-          </div>
-        </fieldset>
+          </fieldset>
+        </div>
         <div className="review-row">
           <p>{review?.texto || "Todavía no escribiste una reseña."}</p>
           <button

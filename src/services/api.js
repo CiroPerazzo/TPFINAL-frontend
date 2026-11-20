@@ -13,12 +13,16 @@ function connectionError() {
   );
 }
 
-export async function apiGetWithAxios(path, { params, signal } = {}) {
+export async function apiGetWithAxios(path, { params, signal, timeout } = {}) {
   let response;
   try {
-    response = await axiosClient.get(path, { params, signal });
+    response = await axiosClient.get(path, { params, signal, timeout });
   } catch (error) {
     if (axios.isCancel(error)) throw error;
+    if (error.code === "ECONNABORTED")
+      throw new Error(
+        "El catálogo tardó demasiado en responder. Intentá buscar de nuevo.",
+      );
     throw connectionError();
   }
   return readPayload(path, response.status, response.data);
