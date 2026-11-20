@@ -33,42 +33,48 @@ export default function Profile() {
         <div className="profile-info">
           <small>PERFIL PERSONAL</small>
           <h1>{user.username}</h1>
-          <p>{user.bio}</p>
           <span>{user.email}</span>
+          {user.bio && <p>{user.bio}</p>}
         </div>
-        <button
-          className="pill"
-          onClick={(e) => {
-            modalOpener.current = e.currentTarget;
-            setModal(true);
-          }}
-        >
-          Editar perfil
-        </button>
-        <button className="pill" disabled={busy} onClick={() => run(logout)}>
-          Cerrar sesión
-        </button>
+        <div className="profile-actions">
+          <button
+            className="pill"
+            onClick={(e) => {
+              modalOpener.current = e.currentTarget;
+              setModal(true);
+            }}
+          >
+            Editar perfil
+          </button>
+          <button className="pill" disabled={busy} onClick={() => run(logout)}>
+            Cerrar sesión
+          </button>
+        </div>
       </section>
-      <RequestState
-        loading={resource.loading}
-        error={error || resource.error}
-      />
-      <SectionTitle>Mis géneros favoritos</SectionTitle>
-      <div className="tabs">
-        {user.generos_preferidos?.map((g) => (
-          <span className="pill" key={g}>
-            {g}
-          </span>
-        ))}
-      </div>
-      <SectionTitle to="/biblioteca">Mis favoritos</SectionTitle>
-      {!resource.loading && !resource.error && resource.data && (
-        favorites.length ? (
-          <AlbumGrid albums={favorites} />
+      <RequestState error={error} />
+      <section className="profile-genres">
+        <SectionTitle>Mis géneros favoritos</SectionTitle>
+        {user.generos_preferidos?.length ? (
+          <div className="tabs">
+            {user.generos_preferidos.map((genre) => (
+              <span className="pill" key={genre}>{genre}</span>
+            ))}
+          </div>
         ) : (
-          <p className="empty">Todavía no tenés favoritos.</p>
-        )
-      )}
+          <p className="profile-empty">Todavía no elegiste géneros favoritos.</p>
+        )}
+      </section>
+      <section className="profile-favorites">
+        <SectionTitle to="/biblioteca" action="Ver biblioteca →">Mis favoritos</SectionTitle>
+        <RequestState loading={resource.loading} error={resource.error} />
+        {!resource.loading && !resource.error && resource.data && (
+          favorites.length ? (
+            <AlbumGrid albums={favorites} />
+          ) : (
+            <p className="profile-empty">Todavía no tenés favoritos.</p>
+          )
+        )}
+      </section>
       {modal && (
         <Modal
           openerRef={modalOpener}

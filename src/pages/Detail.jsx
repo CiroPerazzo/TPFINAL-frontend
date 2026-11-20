@@ -26,17 +26,19 @@ export default function Detail() {
       (i) => i.spotify_id === id && i.tipo === tipo,
     );
     const album = item ?? detail;
-    return { album, item };
+    return { album, item, id, tipo };
   }, [id, tipo]);
   const main = useResource(mainLoader);
+  const currentDetail =
+    main.data?.id === id && main.data?.tipo === tipo ? main.data : null;
 
   // Cargas secundarias independientes: su error se muestra en cada sección.
-  const contentId = main.data?.album.contentId;
+  const contentId = currentDetail?.album.contentId;
   const reviewLoader = useCallback(
-    () =>
-      contentId
-        ? reviewService.get(contentId)
-        : Promise.resolve({ review: null }),
+    async () => {
+      const result = contentId ? await reviewService.get(contentId) : null;
+      return { contentId, review: result?.review ?? null };
+    },
     [contentId],
   );
   const reviewResource = useResource(reviewLoader);
@@ -45,42 +47,77 @@ export default function Detail() {
 
   const [modal, setModal] = useState("");
   const modalOpener = useRef(null);
+  const experienceSaves = useRef(new Map());
+  const [pendingExperienceSaves, setPendingExperienceSaves] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function run(action) {
+  async function run(action, reload = main.reload) {
     setBusy(true);
     setError("");
     try {
       await action();
       setModal("");
-      main.reload();
-      reviewResource.reload();
+      reload();
     } catch (e) {
       setError(e.message);
     } finally {
       setBusy(false);
     }
   }
-  if (resource.loading || resource.error || !resource.data)
-    return <RequestState loading={resource.loading} error={resource.error} />;
-  const { album, item, review, collections } = resource.data;
-  const contentId = album.contentId;
-  const saveToLibrary = () => run(() => libraryService.add(album));
+  if (!currentDetail)
+    return <RequestState loading={main.loading || !main.error} error={main.error} />;
 
-  if (main.loading || main.error || !main.data)
-    return <RequestState loading={main.loading} error={main.error} />;
+  const { album, item } = currentDetail;
+  function updateExperience(field, value, save) {
+    const key = JSON.stringify([id, tipo, field]);
+    const pending = experienceSaves.current.get(key) ?? {
+      confirmedValue: item[field],
+      promise: Promise.resolve(),
+    };
+    const update = (nextValue) => {
+      main.setData((data) => {
+        if (data?.id !== id || data.tipo !== tipo || !data.item) return data;
+        const updatedItem = { ...data.item, [field]: nextValue };
+        return { ...data, item: updatedItem, album: updatedItem };
+      });
+    };
 
-  const { album, item } = main.data;
-  const review = reviewResource.data?.review;
+    setError("");
+    update(value);
+    setPendingExperienceSaves((count) => count + 1);
+
+    const request = pending.promise.then(async () => {
+      try {
+        await save();
+        pending.confirmedValue = value;
+      } catch (e) {
+        if (pending.promise === request) {
+          update(pending.confirmedValue);
+          setError(e.message);
+        }
+      } finally {
+        if (pending.promise === request) experienceSaves.current.delete(key);
+        setPendingExperienceSaves((count) => count - 1);
+      }
+    });
+    pending.promise = request;
+    experienceSaves.current.set(key, pending);
+  }
+
+  const currentReview =
+    reviewResource.data?.contentId === contentId ? reviewResource.data : null;
+  const review = currentReview?.review;
   const collections = collectionsResource.data ?? [];
+  const saveToLibrary = () => run(() => libraryService.add(album));
+  const libraryBusy = busy || main.loading || pendingExperienceSaves > 0;
 
   return (
     <div className="detail-page">
       <Link className="back-link" to="/explorar">
         ← Volver a explorar
       </Link>
-      <RequestState error={error} />
+      <RequestState error={error || main.error} />
       <div className="album-detail">
         <Cover {...album} />
         <div className="album-info">
@@ -96,7 +133,7 @@ export default function Detail() {
           <div className="detail-actions">
             <button
               className="button primary"
-              disabled={busy}
+              disabled={libraryBusy}
               onClick={
                 item
                   ? () => run(() => libraryService.remove(contentId))
@@ -107,7 +144,7 @@ export default function Detail() {
             </button>
             <button
               className="pill"
-              disabled={busy || !item}
+              disabled={libraryBusy || !item}
               onClick={() =>
                 run(() => libraryService.favorite(contentId, !item.es_favorito))
               }
@@ -138,7 +175,7 @@ export default function Detail() {
               </p>
               <button
                 className="button primary"
-                disabled={busy}
+                disabled={libraryBusy}
                 onClick={saveToLibrary}
               >
                 Guardar en biblioteca
@@ -148,15 +185,18 @@ export default function Detail() {
           <fieldset
             className="experience-controls"
             aria-label="Estado y puntuación"
-            disabled={busy || !item}
+            disabled={busy || main.loading || !item}
           >
             <label>
               Estado
               <select
                 value={item?.estado || "quiero_escuchar"}
-                onChange={(e) =>
-                  run(() => libraryService.state(contentId, e.target.value))
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  updateExperience("estado", value, () =>
+                    libraryService.state(contentId, value),
+                  );
+                }}
               >
                 {Object.entries(states).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -172,14 +212,19 @@ export default function Detail() {
               <Stars
                 value={item?.puntuacion || 0}
                 onChange={(value) => {
-                  if (!busy && item)
-                    run(() => ratingService.set(contentId, value));
+                  updateExperience("puntuacion", value, () =>
+                    ratingService.set(contentId, value),
+                  );
                 }}
               />
               {item?.puntuacion && (
                 <button
                   className="pill"
-                  onClick={() => run(() => ratingService.clear(contentId))}
+                  onClick={() =>
+                    updateExperience("puntuacion", null, () =>
+                      ratingService.clear(contentId),
+                    )
+                  }
                 >
                   Quitar puntuación
                 </button>
@@ -188,45 +233,42 @@ export default function Detail() {
           </fieldset>
           <section className="detail-review">
             <h3>Tu reseña</h3>
-            <p>{review?.texto || "Todavía no escribiste una reseña."}</p>
-            <div className="detail-review-actions">
-              <button
-                className="pill"
-                disabled={busy}
-                onClick={(e) => {
-                  modalOpener.current = e.currentTarget;
-                  setModal("review");
-                }}
-          </div>
-        </fieldset>
-        <div className="review-row">
-          <RequestState
-            loading={reviewResource.loading}
-            error={reviewResource.error}
-          />
-          {!reviewResource.loading && !reviewResource.error && (
-            <>
-              <p>{review?.texto || "Todavía no escribiste una reseña."}</p>
-              <button
-                className="pill"
-                disabled={busy}
-                onClick={() => setModal("review")}
-              >
-                {review ? "Editar" : "Escribir"} reseña
-              </button>
-              {review && (
-                <button
-                  className="pill"
-                  disabled={busy}
-                  onClick={() => run(() => reviewService.remove(contentId))}
-                >
-                  Eliminar reseña
-                </button>
-              )}
-            </div>
+            <RequestState
+              loading={!currentReview && !reviewResource.error}
+              error={reviewResource.error}
+            />
+            {currentReview && (
+              <>
+                <p>{review?.texto || "Todavía no escribiste una reseña."}</p>
+                <div className="detail-review-actions">
+                  <button
+                    className="pill"
+                    disabled={busy || reviewResource.loading}
+                    onClick={(e) => {
+                      modalOpener.current = e.currentTarget;
+                      setModal("review");
+                    }}
+                  >
+                    {review ? "Editar" : "Escribir"} reseña
+                  </button>
+                  {review && (
+                    <button
+                      className="pill"
+                      disabled={busy || reviewResource.loading}
+                      onClick={() =>
+                        run(
+                          () => reviewService.remove(contentId),
+                          reviewResource.reload,
+                        )
+                      }
+                    >
+                      Eliminar reseña
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
           </section>
-            </>
-          )}
         </div>
       </section>
       {modal && (
@@ -241,7 +283,10 @@ export default function Detail() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const text = new FormData(e.currentTarget).get("review");
-                run(() => reviewService.save(contentId, text, Boolean(review)));
+                run(
+                  () => reviewService.save(contentId, text, Boolean(review)),
+                  reviewResource.reload,
+                );
               }}
             >
               <label>
@@ -269,7 +314,10 @@ export default function Detail() {
                   key={c.id}
                   disabled={busy}
                   onClick={() =>
-                    run(() => collectionService.addItem(c.id, contentId))
+                    run(
+                      () => collectionService.addItem(c.id, contentId),
+                      collectionsResource.reload,
+                    )
                   }
                 >
                   {c.nombre} ＋

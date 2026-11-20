@@ -67,11 +67,8 @@ export default function Collections() {
             disabled={busy}
             onClick={(e) => {
               detailOpener.current = e.currentTarget;
-              run(async () => setSelected(await service.detail(c.id)));
+              run(async () => openSelected(await service.detail(c.id)));
             }}
-            onClick={() =>
-              run(async () => openSelected(await service.detail(c.id)))
-            }
           >
             <h2>{c.nombre}</h2>
             <p>{c.descripcion}</p>
