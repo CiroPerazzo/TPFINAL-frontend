@@ -1,54 +1,62 @@
-# MUSICMAN frontend
+# MUSICMAN · Frontend
 
-React y Vite, conectado al backend Express de My Collection. Incluye registro,
-login, recuperación de sesión por cookie HttpOnly, búsqueda en Spotify,
-biblioteca, favoritos, puntuaciones, reseñas, colecciones, perfil y estadísticas.
-Las pantallas consultan la API; no usan los datos de demostración.
+Frontend del TP Final DAI/EFSI. Permite explorar canciones y álbumes de Spotify, guardar contenido en una biblioteca personal, marcar favoritos, cambiar el estado de escucha, puntuar, escribir reseñas y organizar colecciones. Inicio y Estadísticas muestran la actividad de la cuenta.
 
-## Desarrollo
+## Instalación local
 
-Requisitos: Node 22.12+ o Node 24, npm y el backend con PostgreSQL configurado.
+Usá Node.js 22.12 o superior de la serie 22, o Node.js 24, con npm. El frontend usa React, React Router y Vite. Para usar la aplicación completa necesitás el backend Express, PostgreSQL con las migraciones aplicadas y credenciales de Spotify para consultar el catálogo.
 
-```bash
-npm install
-npm run dev
-```
+1. Configurá PostgreSQL y Spotify en el backend, ejecutá `npm run migrate` e iniciá el servidor con `npm run dev`. El puerto predeterminado es `3000`. [Guía del backend](https://github.com/suculento666/TP-Final-DAI-EFSI)
+2. Desde la raíz de este repositorio, instalá las dependencias y arrancá Vite.
 
-Iniciar también el backend con `npm run dev` y abrir http://localhost:5173.
-Vite mantiene el puerto 5173 y reenvía `/api` al backend en el puerto 3000.
-Para otro destino, copiar `.env.example` a `.env` y ajustar `API_PROXY_TARGET`.
-`VITE_API_URL` vale `/api` por defecto. Nunca poner secretos de Spotify ni de
-PostgreSQL en variables `VITE_*`, porque quedan expuestas al navegador.
+   ```bash
+   npm ci
+   npm run dev
+   ```
 
-La autenticación utiliza `credentials: include`. Registro envía `username`,
-`email`, `password` y `passwordConfirm`; login usa email y contraseña. Al
-recargar se consulta `/api/auth/me`. Cerrar sesión está disponible en Perfil.
-Los errores del servidor se muestran en las pantallas.
+3. Abrí [http://localhost:5173](http://localhost:5173) y registrá una cuenta o iniciá sesión.
 
-Los enlaces de contenido conservan el ID de Spotify y el tipo (`track`/`album`).
-Las escrituras de favoritos, reseñas, puntuaciones y colecciones usan el ID
-numérico interno devuelto por el backend. El nombre de usuario no es editable:
-el contrato actual permite editar biografía y géneros preferidos.
+### Configuración
 
-## Compilación y despliegue
+Los valores locales funcionan por defecto. Para cambiarlos, copiá [.env.example](.env.example) a `.env` y reiniciá Vite después de editarlo.
 
-```bash
-npm run build
-npm run preview
-```
+| Variable | Valor predeterminado | Uso |
+| --- | --- | --- |
+| `VITE_API_URL` | `/api` | URL base de las peticiones del navegador. Se incorpora al compilar. |
+| `API_PROXY_TARGET` | `http://localhost:3000` | Destino al que Vite reenvía las solicitudes a `/api` en desarrollo y vista previa. |
 
-`preview` también usa el proxy local. En hosting separado, definir
-`VITE_API_URL=https://HOST_BACKEND/api` antes de compilar; configurar el backend
-con `FRONTEND_URL=https://HOST_FRONTEND`, `NODE_ENV=production` y HTTPS.
-Configurar el hosting para servir `index.html` en las rutas de React.
-El proxy local de Vite no se incluye en `dist`.
+Guardá las credenciales de Spotify, PostgreSQL y JWT en el entorno del backend. Las variables `VITE_*` quedan disponibles en el código que recibe el navegador.
 
-## Verificación de integración
+## Scripts
 
-Desde el backend hermano ejecutar `npm run test:frontend`. Esta prueba carga
-estos servicios y la configuración de Vite, inicia Express y verifica el flujo
-HTTP con PostgreSQL en un esquema temporal. Solo Spotify se reemplaza por una
-respuesta controlada. No sustituye una prueba visual en navegador.
+| Comando | Resultado |
+| --- | --- |
+| `npm run dev` | Inicia el servidor de desarrollo con recarga automática. |
+| `npm run build` | Genera la versión de producción en `dist/`. |
+| `npm run preview` | Sirve localmente el último build. |
 
-Para búsquedas reales, el backend necesita credenciales válidas de Spotify.
-Si Spotify rechaza su token, la interfaz muestra el error sin inventar datos.
+## Despliegue
+
+Compilá con `npm run build` y publicá `dist/`. Para probarlo en local, detené el servidor de desarrollo antes de ejecutar `npm run preview`: ambos usan el puerto `5173` y el proxy configurado en Vite.
+
+Para publicar frontend y backend en orígenes separados, definí `VITE_API_URL=https://<backend>/api` antes de compilar. En el backend, configurá `FRONTEND_URL` con el origen público del frontend y usá `NODE_ENV=production` y HTTPS para las cookies de sesión. Configurá el hosting del frontend para servir `index.html` al entrar directamente a rutas como `/biblioteca`. Si preferís conservar `VITE_API_URL=/api` en producción, configurá el reenvío de `/api` en tu hosting.
+
+## Prueba manual
+
+1. Registrá una cuenta y recargá una pantalla privada. La sesión debería mantenerse. Cerrá sesión y comprobá que esa pantalla vuelve a pedir acceso.
+2. Buscá un artista en Explorar y alterná los filtros de canciones y álbumes. Abrí un resultado, guardalo, cambiá su estado, puntúalo y escribí una reseña. Recargá el detalle y comprobá que los datos coinciden.
+3. Creá una colección desde Colecciones, agregale ese contenido desde Detalle y comprobá que aparezca al abrirla.
+4. Repetí la navegación principal con el teclado y en una ventana angosta para revisar foco, contenido y desbordamientos.
+
+## Problemas frecuentes
+
+| Síntoma | Qué revisar |
+| --- | --- |
+| Vite indica que el puerto está ocupado | Detené el proceso que usa el puerto `5173`. Vite tiene `strictPort` activado. |
+| La interfaz no puede conectar al servidor | Verificá que Express esté en ejecución y escucha en el puerto configurado en `API_PROXY_TARGET`. |
+| El inicio de sesión funciona, pero se pierde al recargar | Revisá en el navegador si el backend estableció la cookie. Si son orígenes distintos, verificá HTTPS y que `FRONTEND_URL` coincida con el origen del frontend. |
+| Explorar muestra un error del catálogo | Revisá la configuración de Spotify y el registro de errores en el backend. |
+
+## Documentación técnica
+
+La [guía técnica del frontend](docs/frontend.md) reúne las rutas, los contratos que consume la interfaz, el flujo de datos y la correspondencia con la consigna.
