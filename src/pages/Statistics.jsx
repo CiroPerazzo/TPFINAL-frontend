@@ -46,14 +46,16 @@ export default function Statistics() {
               ],
               [
                 "Géneros de tu biblioteca",
-                data.generos_frecuentes.map((g) => [g.genero, g.total]),
+                data.generos_frecuentes.map((g) => [g.genero, g.porcentaje]),
+                "%",
+                "genre-card",
               ],
               [
                 "Actividad por mes",
                 data.actividad_por_mes.map((m) => [m.mes, m.acciones]),
               ],
-            ].map(([title, rows]) => (
-              <section className="chart-card" key={title}>
+            ].map(([title, rows, suffix = "", extraClass = ""]) => (
+              <section className={`chart-card ${extraClass}`.trim()} key={title}>
                 <h2>{title}</h2>
                 {rows.length ? (
                   rows.map(([label, value]) => (
@@ -67,7 +69,11 @@ export default function Statistics() {
                           }}
                         />
                       </div>
-                      <b>{value}</b>
+                      <b>
+                        {suffix
+                          ? `${value.toLocaleString("es-AR", { maximumFractionDigits: 1 })}${suffix}`
+                          : value}
+                      </b>
                     </div>
                   ))
                 ) : (
