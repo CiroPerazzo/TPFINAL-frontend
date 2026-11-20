@@ -5,8 +5,10 @@ export default function Stars({ value = 4, onChange }) {
         onChange ? (
           <button
             key={n}
+            type="button"
             onClick={() => onChange(n)}
-            aria-label={`Puntuar con ${n} estrellas`}
+            aria-label={`Puntuar con ${n} ${n === 1 ? "estrella" : "estrellas"}`}
+            aria-pressed={n === value}
           >
             {n <= value ? "★" : "☆"}
           </button>

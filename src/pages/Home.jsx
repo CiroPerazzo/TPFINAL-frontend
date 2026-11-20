@@ -55,20 +55,32 @@ export default function Home() {
       <RequestState {...{ loading, error }} />
       {data && (
         <>
-          <SectionTitle to="/biblioteca" action="Ver biblioteca →">
-            Agregados recientemente
-          </SectionTitle>
-          <AlbumGrid albums={data.items.slice(0, 8)} />
-          {!data.items.length && (
-            <p>Tu biblioteca está vacía. Explorá música para empezar.</p>
-          )}
-          <SectionTitle>Tu actividad reciente</SectionTitle>
-          {data.activity.slice(0, 5).map((a) => (
-            <div className="activity-card" key={a.id}>
-              <span>{a.tipo.replaceAll("_", " ")}</span>
-              <time>{new Date(a.creado_en).toLocaleString("es-AR")}</time>
-            </div>
-          ))}
+          <section className="home-recent">
+            <SectionTitle to="/biblioteca" action="Ver biblioteca →">
+              Agregados recientemente
+            </SectionTitle>
+            <AlbumGrid albums={data.items.slice(0, 8)} />
+            {!data.items.length && (
+              <p>Tu biblioteca está vacía. Explorá música para empezar.</p>
+            )}
+          </section>
+          <section className="home-activity">
+            <SectionTitle>Tu actividad reciente</SectionTitle>
+            {data.activity.length ? (
+              <ul className="home-activity-list">
+                {data.activity.slice(0, 5).map((entry) => (
+                  <li key={entry.id}>
+                    <strong>{entry.tipo.replaceAll("_", " ")}</strong>
+                    <time dateTime={entry.creado_en}>
+                      {new Date(entry.creado_en).toLocaleString("es-AR")}
+                    </time>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>Todavía no tenés actividad reciente.</p>
+            )}
+          </section>
         </>
       )}
     </>

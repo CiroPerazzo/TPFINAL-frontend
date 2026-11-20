@@ -7,20 +7,13 @@ import RequestState from "../components/ui/RequestState.jsx";
 import { musicService } from "../services/musicService.js";
 export default function Explore() {
   const [params, setParams] = useSearchParams();
-  const [query, setQuery] = useState(params.get("q") || "");
+  const query = params.get("q") || "";
   const [tab, setTab] = useState("Todos");
   const [sort, setSort] = useState("relevancia");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    setQuery(params.get("q") || "");
-  }, [params]);
+  const [response, setResponse] = useState(null);
   useEffect(() => {
     const controller = new AbortController();
-    setError("");
-    setResults([]);
-    setLoading(true);
+    setResponse(null);
     const timer = setTimeout(async () => {
       try {
         const items = await musicService.search(
@@ -28,11 +21,17 @@ export default function Explore() {
           tab === "Canciones" ? "track" : tab === "álbumes" ? "album" : "both",
           controller.signal,
         );
-        if (!controller.signal.aborted) setResults(items);
+        if (!controller.signal.aborted) {
+          setResponse({ query, tab, items });
+        }
       } catch (e) {
-        if (!controller.signal.aborted) setError(e.message);
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) {
+          setResponse({
+            query,
+            tab,
+            error: e.message || "No pudimos completar la búsqueda.",
+          });
+        }
       }
     }, 350);
     return () => {
@@ -40,6 +39,11 @@ export default function Explore() {
       controller.abort();
     };
   }, [query, tab]);
+  const currentResponse =
+    response?.query === query && response.tab === tab ? response : null;
+  const loading = !currentResponse;
+  const error = currentResponse?.error;
+  const results = currentResponse?.items || [];
   const sorted =
     sort === "nombre"
       ? [...results].sort((a, b) => a.title.localeCompare(b.title))
@@ -84,7 +88,7 @@ export default function Explore() {
           <option value="nombre">Nombre</option>
         </select>
       </div>
-      <RequestState {...{ loading, error }} />
+      <RequestState loading={loading} error={error} centerLoading />
       {!query.trim() && !loading && !error && results.length > 0 && (
         <p>Descubrí canciones y álbumes de pop o buscá tu música favorita.</p>
       )}

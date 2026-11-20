@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import Cover from "../components/ui/Cover.jsx";
 import Stars from "../components/ui/Stars.jsx";
@@ -25,7 +25,8 @@ export default function Detail() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  async function run(action) {
+
+  async function run(action, reload = main.reload) {
     setBusy(true);
     setError("");
     try {
@@ -47,7 +48,7 @@ export default function Detail() {
       <Link className="back-link" to="/explorar">
         ← Volver a explorar
       </Link>
-      <RequestState error={error} />
+      <RequestState error={error || main.error} />
       <div className="album-detail">
         <Cover {...album} />
         <div className="album-info">
@@ -63,25 +64,23 @@ export default function Detail() {
           <div className="detail-actions">
             <button
               className="button primary"
-              disabled={busy}
-              onClick={() =>
-                run(() =>
-                  item
-                    ? libraryService.remove(contentId)
-                    : libraryService.add(album),
-                )
+              disabled={libraryBusy}
+              onClick={
+                item
+                  ? () => run(() => libraryService.remove(contentId))
+                  : saveToLibrary
               }
             >
-              {item ? "Quitar de biblioteca" : "＋ Guardar en biblioteca"}
+              {item ? "Quitar de biblioteca" : "Guardar en biblioteca"}
             </button>
             <button
               className="pill"
-              disabled={busy || !item}
+              disabled={libraryBusy || !item}
               onClick={() =>
                 run(() => libraryService.favorite(contentId, !item.es_favorito))
               }
             >
-              {item?.es_favorito ? "♥" : "♡"} Favorito
+              {item?.es_favorito ? "Quitar favorito" : "Marcar favorito"}
             </button>
             <Link className="pill" to={`coleccion?tipo=${tipo}`}>
               ＋ Colección
@@ -91,21 +90,37 @@ export default function Detail() {
       </div>
       <section className="experience">
         <h2>Tu experiencia</h2>
-        {!item && (
-          <p>
-            Guardá este contenido en tu biblioteca para cambiar su estado y
-            puntuación.
-          </p>
-        )}
-        <fieldset className="experience-card" disabled={busy || !item}>
-          <div className="experience-controls">
+        <div className="experience-card">
+          {!item && (
+            <div className="experience-setup">
+              <p>
+                Guardá este contenido en tu biblioteca para cambiar su estado y
+                puntuarlo.
+              </p>
+              <button
+                className="button primary"
+                disabled={libraryBusy}
+                onClick={saveToLibrary}
+              >
+                Guardar en biblioteca
+              </button>
+            </div>
+          )}
+          <fieldset
+            className="experience-controls"
+            aria-label="Estado y puntuación"
+            disabled={busy || main.loading || !item}
+          >
             <label>
               Estado
               <select
                 value={item?.estado || "quiero_escuchar"}
-                onChange={(e) =>
-                  run(() => libraryService.state(contentId, e.target.value))
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  updateExperience("estado", value, () =>
+                    libraryService.state(contentId, value),
+                  );
+                }}
               >
                 {Object.entries(states).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -115,18 +130,25 @@ export default function Detail() {
               </select>
             </label>
             <div>
-              <span>Tu puntuación</span>
+              <span>
+                Tu puntuación{item?.puntuacion ? ` · ${item.puntuacion}/5` : ""}
+              </span>
               <Stars
                 value={item?.puntuacion || 0}
                 onChange={(value) => {
-                  if (!busy && item)
-                    run(() => ratingService.set(contentId, value));
+                  updateExperience("puntuacion", value, () =>
+                    ratingService.set(contentId, value),
+                  );
                 }}
               />
               {item?.puntuacion && (
                 <button
                   className="pill"
-                  onClick={() => run(() => ratingService.clear(contentId))}
+                  onClick={() =>
+                    updateExperience("puntuacion", null, () =>
+                      ratingService.clear(contentId),
+                    )
+                  }
                 >
                   Quitar puntuación
                 </button>
