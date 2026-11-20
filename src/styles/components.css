@@ -894,15 +894,15 @@ main {
 }
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 2%;
-  margin-top: 32px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
 }
 .stat-grid section {
-  height: 118px;
-  border-radius: 16px;
+  min-height: 84px;
+  border-radius: 14px;
   background: var(--panel);
-  padding: 18px;
+  padding: 14px 16px;
 }
 .stat-grid small {
   font-size: 10px;
@@ -910,9 +910,9 @@ main {
 }
 .stat-grid b {
   display: block;
-  font-size: 31px;
-  line-height: 38px;
-  margin-top: 23px;
+  font-size: 26px;
+  line-height: 30px;
+  margin-top: 10px;
 }
 .chart-grid {
   display: grid;
@@ -1313,6 +1313,7 @@ main {
   .profile-hero { height: auto; min-height: 276px; flex-wrap: wrap; }
   .profile-info > span { margin-top: 24px; }
   .profile-hero > .pill { position: static; }
+  .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 768px) {
@@ -1327,7 +1328,7 @@ main {
   .topbar { gap: 4%; }
   .home-feature, .collection-grid, .chart-grid { grid-template-columns: 100%; row-gap: 20px; }
   .summary { padding-inline: 6%; }
-  .genre-grid, .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 20px; }
+  .genre-grid, .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 16px; }
   .album-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .page-title, .explore-controls, .review-row { flex-wrap: wrap; gap: 16px; }
   .library-search { height: auto; min-height: 52px; flex-wrap: wrap; padding-block: 12px; }
@@ -1427,17 +1428,27 @@ main {
 .empty-collection {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 220px;
+  padding: 40px 16px;
+  text-align: center;
 }
 
 .empty-collection .button {
+  justify-content: center;
+  height: 52px;
+  min-width: 220px;
+  padding: 0 40px;
+  font-size: 16px;
   white-space: normal;
-  height: auto;
-  min-height: 42px;
-  padding-block: 12px;
 }
-
+.empty-collection p {
+  max-width: 22rem;
+  font-size: 15px;
+  color: var(--muted);
+}
 .monthly-activity-table {
   width: 100%;
   margin-top: 24px;
@@ -1476,4 +1487,8 @@ main {
 .monthly-activity-table tfoot {
   color: var(--mint);
   font-weight: 700;
+}
+
+.genre-card .bar-row > span {
+  text-transform: capitalize;
 }
