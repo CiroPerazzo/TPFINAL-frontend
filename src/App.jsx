@@ -7,6 +7,9 @@ import Explore from "./pages/Explore.jsx";
 import Library from "./pages/Library.jsx";
 import Detail from "./pages/Detail.jsx";
 import Collections from "./pages/Collections.jsx";
+import CollectionDetail from "./pages/CollectionDetail.jsx";
+import NewCollection from "./pages/NewCollection.jsx";
+import AddToCollection from "./pages/AddToCollection.jsx";
 import Profile from "./pages/Profile.jsx";
 import Statistics from "./pages/Statistics.jsx";
 import Login from "./pages/Login.jsx";
@@ -29,7 +32,10 @@ export default function App() {
         <Route path="explorar" element={<Explore />} />
         <Route path="biblioteca" element={<Library />} />
         <Route path="detalle/:id" element={<Detail />} />
+        <Route path="detalle/:id/coleccion" element={<AddToCollection />} />
         <Route path="colecciones" element={<Collections />} />
+        <Route path="colecciones/nueva" element={<NewCollection />} />
+        <Route path="colecciones/:id" element={<CollectionDetail />} />
         <Route path="perfil" element={<Profile />} />
         <Route path="estadisticas" element={<Statistics />} />
         <Route path="*" element={<NotFound />} />
