@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import PageTitle from "../components/ui/PageTitle.jsx";
 import Modal from "../components/ui/Modal.jsx";
@@ -10,8 +10,22 @@ export default function Collections() {
   const resource = useResource(service.list);
   const [modal, setModal] = useState(false);
   const [selected, setSelected] = useState(null);
+  const selectedRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  function openSelected(data) {
+    selectedRef.current = data;
+    setSelected(data);
+  }
+  function closeSelected() {
+    selectedRef.current = null;
+    setSelected(null);
+  }
+  // Sólo actualiza selected si el modal sigue abierto (evita reapertura por race condition)
+  function refreshSelected(data) {
+    if (selectedRef.current !== null) openSelected(data);
+  }
   async function run(action) {
     setBusy(true);
     setError("");
@@ -44,7 +58,7 @@ export default function Collections() {
             key={c.id}
             disabled={busy}
             onClick={() =>
-              run(async () => setSelected(await service.detail(c.id)))
+              run(async () => openSelected(await service.detail(c.id)))
             }
           >
             <h2>{c.nombre}</h2>
@@ -82,7 +96,7 @@ export default function Collections() {
       {selected && (
         <Modal
           title={selected.collection.nombre}
-          onClose={() => setSelected(null)}
+          onClose={() => closeSelected()}
         >
           <RequestState error={error} />
           <form
@@ -91,7 +105,7 @@ export default function Collections() {
               const name = new FormData(e.currentTarget).get("name");
               run(async () => {
                 await service.update(selected.collection.id, name);
-                setSelected(await service.detail(selected.collection.id));
+                refreshSelected(await service.detail(selected.collection.id));
                 resource.reload();
               });
             }}
@@ -122,7 +136,7 @@ export default function Collections() {
                       selected.collection.id,
                       a.contenido_id,
                     );
-                    setSelected(await service.detail(selected.collection.id));
+                    refreshSelected(await service.detail(selected.collection.id));
                   })
                 }
               >
@@ -140,7 +154,7 @@ export default function Collections() {
               if (window.confirm("¿Eliminar esta colección?"))
                 run(async () => {
                   await service.remove(selected.collection.id);
-                  setSelected(null);
+                  closeSelected();
                   resource.reload();
                 });
             }}
