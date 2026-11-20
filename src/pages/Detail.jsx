@@ -7,7 +7,6 @@ import RequestState from "../components/ui/RequestState.jsx";
 import useResource from "../hooks/useResource.js";
 import { musicService } from "../services/musicService.js";
 import { libraryService } from "../services/libraryService.js";
-import { collectionService } from "../services/collectionService.js";
 import { ratingService } from "../services/ratingService.js";
 import { reviewService } from "../services/reviewService.js";
 import { states } from "../services/models.js";
@@ -16,17 +15,14 @@ export default function Detail() {
   const [params] = useSearchParams();
   const tipo = params.get("tipo") === "track" ? "track" : "album";
   const loader = useCallback(async () => {
-    const [items, collections] = await Promise.all([
-      libraryService.list(),
-      collectionService.list(),
-    ]);
+    const items = await libraryService.list();
     const item = items.find((i) => i.spotify_id === id && i.tipo === tipo);
     const album = item || (await musicService.detail(id, tipo));
     const { review } = await reviewService.get(album.contentId);
-    return { album, item, review, collections };
+    return { album, item, review };
   }, [id, tipo]);
   const resource = useResource(loader);
-  const [modal, setModal] = useState("");
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   async function run(action) {
@@ -34,7 +30,7 @@ export default function Detail() {
     setError("");
     try {
       await action();
-      setModal("");
+      setReviewOpen(false);
       resource.reload();
     } catch (e) {
       setError(e.message);
@@ -44,7 +40,7 @@ export default function Detail() {
   }
   if (resource.loading || resource.error || !resource.data)
     return <RequestState loading={resource.loading} error={resource.error} />;
-  const { album, item, review, collections } = resource.data;
+  const { album, item, review } = resource.data;
   const contentId = album.contentId;
   return (
     <div className="detail-page">
@@ -87,13 +83,9 @@ export default function Detail() {
             >
               {item?.es_favorito ? "♥" : "♡"} Favorito
             </button>
-            <button
-              className="pill"
-              disabled={busy}
-              onClick={() => setModal("collection")}
-            >
+            <Link className="pill" to={`coleccion?tipo=${tipo}`}>
               ＋ Colección
-            </button>
+            </Link>
           </div>
         </div>
       </div>
@@ -147,7 +139,7 @@ export default function Detail() {
           <button
             className="pill"
             disabled={busy}
-            onClick={() => setModal("review")}
+            onClick={() => setReviewOpen(true)}
           >
             {review ? "Editar" : "Escribir"} reseña
           </button>
@@ -162,52 +154,29 @@ export default function Detail() {
           )}
         </div>
       </section>
-      {modal && (
-        <Modal
-          title={modal === "review" ? "Tu reseña" : "Agregar a una colección"}
-          onClose={() => setModal("")}
-        >
+      {reviewOpen && (
+        <Modal title="Tu reseña" onClose={() => setReviewOpen(false)}>
           <RequestState error={error} />
-          {modal === "review" ? (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const text = new FormData(e.currentTarget).get("review");
-                run(() => reviewService.save(contentId, text, Boolean(review)));
-              }}
-            >
-              <label>
-                Tu reseña
-                <textarea
-                  name="review"
-                  defaultValue={review?.texto || ""}
-                  required
-                  maxLength={2000}
-                />
-              </label>
-              <button className="button primary" disabled={busy}>
-                Guardar reseña
-              </button>
-            </form>
-          ) : (
-            <div className="collection-options">
-              {collections.map((c) => (
-                <button
-                  className="pill"
-                  key={c.id}
-                  disabled={busy}
-                  onClick={() =>
-                    run(() => collectionService.addItem(c.id, contentId))
-                  }
-                >
-                  {c.nombre} ＋
-                </button>
-              ))}
-              {!collections.length && (
-                <Link to="/colecciones">Creá tu primera colección</Link>
-              )}
-            </div>
-          )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const text = new FormData(e.currentTarget).get("review");
+              run(() => reviewService.save(contentId, text, Boolean(review)));
+            }}
+          >
+            <label>
+              Tu reseña
+              <textarea
+                name="review"
+                defaultValue={review?.texto || ""}
+                required
+                maxLength={2000}
+              />
+            </label>
+            <button className="button primary" disabled={busy}>
+              Guardar reseña
+            </button>
+          </form>
         </Modal>
       )}
     </div>

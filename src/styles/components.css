@@ -736,8 +736,8 @@ main {
 }
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2%;
+  grid-template-columns: repeat(3, minmax(0, 13.5rem));
+  gap: 20px;
   margin-top: 35px;
 }
 .collection-card {
@@ -763,6 +763,32 @@ main {
 .collection-card > .text-button {
   font-size: 13px;
   margin: 17px 6px 0;
+}
+.collection-link {
+  min-height: 0;
+  max-width: 13.5rem;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  text-align: center;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.collection-link > h2 {
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 0;
+}
+.collection-link:hover,
+.collection-link:focus-visible {
+  outline: 1px solid var(--accent);
+}
+.collection-form {
+  max-width: 32rem;
+}
+.collection-items {
+  margin: 24px 0;
 }
 .collection-help {
   margin-top: 60px;
@@ -1129,6 +1155,7 @@ main {
   margin-top: 36px;
 }
 .access-form label,
+.collection-form label,
 .modal form label {
   font-size: 13px;
   font-weight: 500;
@@ -1138,6 +1165,7 @@ main {
   margin-bottom: 24px;
 }
 .access-form input,
+.collection-form input,
 .modal input:not([type="checkbox"]),
 .modal textarea {
   height: 52px;
@@ -1225,6 +1253,7 @@ main {
 .collection-options {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 12px;
 }
 .modal p {
