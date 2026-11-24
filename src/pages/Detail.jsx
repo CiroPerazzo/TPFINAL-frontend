@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import Cover from "../components/ui/Cover.jsx";
 import Stars from "../components/ui/Stars.jsx";
@@ -9,7 +9,7 @@ import { musicService } from "../services/musicService.js";
 import { libraryService } from "../services/libraryService.js";
 import { ratingService } from "../services/ratingService.js";
 import { reviewService } from "../services/reviewService.js";
-import { states } from "../services/models.js";
+import { music, states } from "../services/models.js";
 export default function Detail() {
   const { id } = useParams();
   const [params] = useSearchParams();
@@ -23,16 +23,37 @@ export default function Detail() {
   }, [id, tipo]);
   const resource = useResource(loader);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const reviewOpener = useRef(null);
+  const [ratingDraft, setRatingDraft] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function run(action) {
+  async function run(action, { reload = true } = {}) {
     setBusy(true);
     setError("");
     try {
       await action();
       setReviewOpen(false);
-      resource.reload();
+      if (reload) resource.reload();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function saveRating(value) {
+    setBusy(true);
+    setError("");
+    try {
+      const { item: updatedItem } = await (value === null
+        ? ratingService.clear(contentId)
+        : ratingService.set(contentId, value));
+      resource.setData((current) => {
+        if (current?.album?.contentId !== contentId) return current;
+        const updated = music({ ...current.album, ...updatedItem });
+        return { ...current, album: updated, item: updated };
+      });
+      setRatingDraft(null);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -43,6 +64,21 @@ export default function Detail() {
     return <RequestState loading={resource.loading} error={resource.error} />;
   const { album, item, review } = resource.data;
   const contentId = album.contentId;
+  const canWriteReview = Boolean(item || review);
+  const savedRating = item?.puntuacion || 0;
+  const selectedRating =
+    ratingDraft?.contentId === contentId ? ratingDraft.value : savedRating;
+  function updateReview(action) {
+    return run(async () => {
+      const nextReview = await action();
+      resource.setData((current) =>
+        current?.album?.contentId === contentId
+          ? { ...current, review: nextReview }
+          : current,
+      );
+    }, { reload: false });
+  }
+
   const saveToLibrary = () => run(() => libraryService.add(album));
   return (
     <div className="detail-page">
@@ -68,7 +104,11 @@ export default function Detail() {
               disabled={busy}
               onClick={
                 item
-                  ? () => run(() => libraryService.remove(contentId))
+                  ? () =>
+                      run(async () => {
+                        await libraryService.remove(contentId);
+                        setRatingDraft(null);
+                      })
                   : saveToLibrary
               }
             >
@@ -133,17 +173,23 @@ export default function Detail() {
                 Tu puntuación{item?.puntuacion ? ` · ${item.puntuacion}/5` : ""}
               </span>
               <Stars
-                value={item?.puntuacion || 0}
-                onChange={(value) => {
-                  run(() => ratingService.set(contentId, value));
-                }}
+                value={selectedRating}
+                onChange={(value) => setRatingDraft({ contentId, value })}
               />
-              {item?.puntuacion && (
+              {selectedRating !== savedRating && (
                 <button
+                  type="button"
                   className="pill"
-                  onClick={() =>
-                    run(() => ratingService.clear(contentId))
-                  }
+                  onClick={() => saveRating(selectedRating)}
+                >
+                  Guardar puntuación
+                </button>
+              )}
+              {savedRating > 0 && (
+                <button
+                  type="button"
+                  className="pill"
+                  onClick={() => saveRating(null)}
                 >
                   Quitar puntuación
                 </button>
@@ -152,11 +198,15 @@ export default function Detail() {
           </fieldset>
         </div>
         <div className="review-row">
-          <p>{review?.texto || "Todavía no escribiste una reseña."}</p>
+          <p>{review?.texto || (item ? "Todavía no escribiste una reseña." : "Guardá este contenido en tu biblioteca para escribir una reseña.")}</p>
           <button
             className="pill"
-            disabled={busy}
-            onClick={() => setReviewOpen(true)}
+            disabled={busy || !canWriteReview}
+            ref={reviewOpener}
+            onClick={() => {
+              setError("");
+              setReviewOpen(true);
+            }}
           >
             {review ? "Editar" : "Escribir"} reseña
           </button>
@@ -164,21 +214,37 @@ export default function Detail() {
             <button
               className="pill"
               disabled={busy}
-              onClick={() => run(() => reviewService.remove(contentId))}
+              onClick={() =>
+                updateReview(async () => {
+                  await reviewService.remove(contentId);
+                  return null;
+                })
+              }
             >
               Eliminar reseña
             </button>
           )}
         </div>
       </section>
-      {reviewOpen && (
-        <Modal title="Tu reseña" onClose={() => setReviewOpen(false)}>
+      {reviewOpen && canWriteReview && (
+        <Modal
+          openerRef={reviewOpener}
+          title="Tu reseña"
+          onClose={() => setReviewOpen(false)}
+        >
           <RequestState error={error} />
           <form
             onSubmit={(e) => {
               e.preventDefault();
               const text = new FormData(e.currentTarget).get("review");
-              run(() => reviewService.save(contentId, text, Boolean(review)));
+              updateReview(async () => {
+                const { review: savedReview } = await reviewService.save(
+                  contentId,
+                  text,
+                  Boolean(review),
+                );
+                return savedReview;
+              });
             }}
           >
             <label>

@@ -5,7 +5,7 @@ export default function Modal({ title, onClose, openerRef, children }) {
 
   useLayoutEffect(() => {
     const dialog = dialogRef.current;
-    const opener = openerRef.current;
+    const opener = openerRef?.current;
     dialog.showModal();
     return () => {
       dialog.close();
